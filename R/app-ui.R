@@ -1,5 +1,11 @@
+#' App UI
+#'
+#' Create the UI component of the dccvalidator Shiny app.
+#'
 #' @import shiny
 #' @import shinydashboard
+#' @param request Shiny request
+#' @export
 app_ui <- function(request) {
   dashboardPage(
     dashboardHeader(title = "Metadata Validation"),
@@ -8,7 +14,8 @@ app_ui <- function(request) {
       sidebarMenu(
         menuItem("Documentation", tabName = "documentation"),
         menuItem("Validator", tabName = "validator")
-      )
+      ),
+      create_footer(config::get("contact_email"))
     ),
 
     dashboardBody(
@@ -184,9 +191,10 @@ app_ui <- function(request) {
 
           # Documentation tab UI
           upload_documents_ui(
-            id = "documentation", 
-            study_link_human = config::get("study_link_human"), 
-            study_link_animal = config::get("study_link_animal"))
+            id = "documentation",
+            study_link_human = config::get("study_link_human"),
+            study_link_animal = config::get("study_link_animal")
+          )
         ),
         class = "tab-content"
       )
