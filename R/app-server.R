@@ -7,8 +7,12 @@
 #' @param input Shiny input
 #' @param output Shiny output
 #' @param session Shiny session
+#' @param config_file Configuration file to read from (defaults to
+#'   "config.yml"). If the file isn't found at the location specified then
+#'   parent directories are searched for a file of the same name.
 #' @export
-app_server <- function(input, output, session) {
+app_server <- function(input, output, session,
+                       config_file = Sys.getenv("R_CONFIG_FILE", "config.yml")) {
   syn <- synapse$Synapse()
 
   ## Initial titles for report boxes
@@ -33,7 +37,7 @@ app_server <- function(input, output, session) {
     ## folder at the next step), and if they are a certified user.
     user <- syn$getUserProfile()
     membership <- check_team_membership(
-      teams = config::get("teams"),
+      teams = config::get("teams", file = config_file),
       user = user,
       syn = syn
     )
@@ -46,7 +50,7 @@ app_server <- function(input, output, session) {
       inherits(certified, "check_pass")) {
       created_folder <- try(
         create_folder(
-          parent = config::get("parent"),
+          parent = config::get("parent", file = config_file),
           name = user$userName,
           synapseclient = synapse,
           syn = syn
@@ -56,7 +60,9 @@ app_server <- function(input, output, session) {
       study_name <- callModule(
         get_study_server,
         "study",
-        study_table_id = reactive(config::get("study_table")),
+        study_table_id = reactive(
+          config::get("study_table", file = config_file)
+        ),
         syn = syn
       )
 
@@ -76,7 +82,9 @@ app_server <- function(input, output, session) {
         upload_documents_server,
         "documentation",
         parent_folder = reactive(created_folder),
-        study_table_id = reactive(config::get("study_table")),
+        study_table_id = reactive(
+          config::get("study_table", file = config_file)
+        ),
         synapseclient = synapse,
         syn = syn
       )
@@ -92,7 +100,7 @@ app_server <- function(input, output, session) {
 
     ## Download annotation definitions
     annots <- get_synapse_annotations(
-      synID = config::get("annotations_table"),
+      synID = config::get("annotations_table", file = config_file),
       syn
     )
 
@@ -168,20 +176,35 @@ app_server <- function(input, output, session) {
     # Location of templates
     indiv_template <- reactive({
       if (input$species == "human") {
-        config::get("templates")$individual_templates[["human"]]
+        config::get(
+          "templates",
+          file = config_file
+        )$individual_templates[["human"]]
       } else {
-        config::get("templates")$individual_templates[["animal"]]
+        config::get(
+          "templates",
+          file = config_file
+        )$individual_templates[["animal"]]
       }
     })
     biosp_template <- reactive({
       if (input$species == "drosophila") {
-        config::get("templates")$biospecimen_templates[["drosophila"]]
+        config::get(
+          "templates",
+          file = config_file
+        )$biospecimen_templates[["drosophila"]]
       } else {
-        config::get("templates")$biospecimen_templates[["general"]]
+        config::get(
+          "templates",
+          file = config_file
+        )$biospecimen_templates[["general"]]
       }
     })
     assay_template <- reactive({
-      config::get("templates")$assay_templates[[input$assay_name]]
+      config::get(
+        "templates",
+        file = config_file
+      )$assay_templates[[input$assay_name]]
     })
     species_name <- reactive({
       input$species
@@ -196,8 +219,8 @@ app_server <- function(input, output, session) {
           title = "Instructions",
           # nolint start
           instructions(
-            annots_link = config::get("annotations_link"),
-            templates_link = config::get("templates_link")
+            annots_link = config::get("annotations_link", file = config_file),
+            templates_link = config::get("templates_link", file = config_file)
           ),
           # nolint end
           easyClose = TRUE
@@ -224,7 +247,7 @@ app_server <- function(input, output, session) {
     missing_cols_manifest <- reactive({
       check_cols_manifest(
         manifest(),
-        config::get("templates")$manifest_template,
+        config::get("templates", file = config_file)$manifest_template,
         syn = syn
       )
     })
@@ -339,7 +362,10 @@ app_server <- function(input, output, session) {
     empty_cols_manifest <- reactive({
       check_cols_empty(
         manifest(),
-        required_cols = config::get("complete_columns")$manifest,
+        required_cols = config::get(
+          "complete_columns",
+          file = config_file
+        )$manifest,
         success_msg = "No columns are empty in the manifest",
         fail_msg = "Some columns are empty in the manifest"
       )
@@ -347,7 +373,10 @@ app_server <- function(input, output, session) {
     empty_cols_indiv <- reactive({
       check_cols_empty(
         indiv(),
-        required_cols = config::get("complete_columns")$individual,
+        required_cols = config::get(
+          "complete_columns",
+          file = config_file
+        )$individual,
         success_msg = "No columns are empty in the individual metadata",
         fail_msg = "Some columns are empty in the individual metadata"
       )
@@ -373,7 +402,10 @@ app_server <- function(input, output, session) {
     complete_cols_manifest <- reactive({
       check_cols_complete(
         manifest(),
-        required_cols = config::get("complete_columns")$manifest,
+        required_cols = config::get(
+          "complete_columns",
+          file = config_file
+        )$manifest,
         success_msg = "All required columns present are complete in the manifest", # nolint
         fail_msg = "Some required columns are incomplete in the manifest"
       )
@@ -381,7 +413,10 @@ app_server <- function(input, output, session) {
     complete_cols_indiv <- reactive({
       check_cols_complete(
         indiv(),
-        required_cols = config::get("complete_columns")$individual,
+        required_cols = config::get(
+          "complete_columns",
+          file = config_file
+        )$individual,
         success_msg = "All required columns present are complete in the individual metadata", # nolint
         fail_msg = "Some required columns are incomplete in the individual metadata" # nolint
       )
@@ -389,7 +424,10 @@ app_server <- function(input, output, session) {
     complete_cols_biosp <- reactive({
       check_cols_complete(
         biosp(),
-        required_cols = config::get("complete_columns")$biospecimen,
+        required_cols = config::get(
+          "complete_columns",
+          file = config_file
+        )$biospecimen,
         success_msg = "All required columns present are complete in the biospecimen metadata", # nolint
         fail_msg = "Some required columns are incomplete in the biospecimen metadata" # nolint
       )
@@ -397,7 +435,10 @@ app_server <- function(input, output, session) {
     complete_cols_assay <- reactive({
       check_cols_complete(
         assay(),
-        required_cols = config::get("complete_columns")$assay,
+        required_cols = config::get(
+          "complete_columns",
+          file = config_file
+        )$assay,
         success_msg = "All required columns present are complete in the assay metadata", # nolint
         fail_msg = "Some required columns are incomplete in the assay metadata" # nolint
       )

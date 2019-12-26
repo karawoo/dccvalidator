@@ -5,8 +5,10 @@
 #' @import shiny
 #' @import shinydashboard
 #' @param request Shiny request
+#' @inheritParams app_server
 #' @export
-app_ui <- function(request) {
+app_ui <- function(request,
+                   config_file = Sys.getenv("R_CONFIG_FILE", "config.yml")) {
   dashboardPage(
     dashboardHeader(title = "Metadata Validation"),
 
@@ -15,7 +17,7 @@ app_ui <- function(request) {
         menuItem("Documentation", tabName = "documentation"),
         menuItem("Validator", tabName = "validator")
       ),
-      create_footer(config::get("contact_email"))
+      create_footer(config::get("contact_email", file = config_file))
     ),
 
     dashboardBody(
@@ -48,7 +50,7 @@ app_ui <- function(request) {
                   radioButtons(
                     "species",
                     "Species",
-                    config::get("species_list")
+                    config::get("species_list", file = config_file)
                   )
                 ),
 
@@ -56,7 +58,12 @@ app_ui <- function(request) {
                   selectInput(
                     "assay_name",
                     "Assay type",
-                    names(config::get("templates")$assay_templates)
+                    names(
+                      config::get(
+                        "templates",
+                        file = config_file
+                      )$assay_templates
+                    )
                   )
                 ),
 
@@ -169,9 +176,18 @@ app_ui <- function(request) {
           # Documentation tab UI
           upload_documents_ui(
             id = "documentation",
-            study_link_human = config::get("study_link_human"),
-            study_link_animal = config::get("study_link_animal"),
-            study_link_ref = config::get("study_link_ref")
+            study_link_human = config::get(
+              "study_link_human",
+              file = config_file
+            ),
+            study_link_animal = config::get(
+              "study_link_animal",
+              file = config_file
+            ),
+            study_link_ref = config::get(
+              "study_link_ref",
+              file = config_file
+            )
           )
         ),
         class = "tab-content"
